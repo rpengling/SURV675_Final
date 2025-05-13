@@ -144,10 +144,45 @@ shinyServer(function(input, output, session){
   
   
   
-  #Input widget 
+  #Country widget 
   output$inputwidget <- renderUI({
     selectInput("selected", "Select a Country:", choices = unique(Dat$Country), selected = unique(Dat$Country)[1])
   })
+  #Outcome widget 
+  output$outcomewidget <- renderUI({
+    selectInput("selected", "Select an Outcome Variable:", 
+                choices = c("GenRol", "Immig"), 
+                selected = "GenRol")
+  })
+  #Controls widget 
+  output$controlswidget <- renderUI({
+    selectInput("selected", 
+                "Select Control Variable(s):", 
+                choices = c("Sex", "Edu"), 
+                selected = NULL,  
+                multiple = TRUE)
+  })
+  #Poly widget 
+  output$polywidget <- renderUI({
+    numericInput("num_input", "Enter a Numeric Value (1-5):", value = 1, min = 1, max = 5)
+  })
+    
+    
+
+  
+  
+  
+  #Report widget 
+  output$download_report <- downloadHandler(
+    filename = function() {
+      paste("Report_for_", input$country, ".pdf", sep = "")  
+    },
+    content = function(file) {
+      report_content <- generate_report(input$country)
+      
+      write(report_content, file)
+    }
+  )
   
   
 }

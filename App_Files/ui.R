@@ -8,7 +8,7 @@ library(here)
 
 shinyUI(
   dashboardPage(skin = "blue",
-                dashboardHeader(title = "World Value Study: Wave '06 Data Exploration", titleWidth = 500, disable = FALSE), 
+                dashboardHeader(title = "Exploring Attitudes towards Gender Roles and Immigration", titleWidth = 500, disable = FALSE), 
                 
                 
                 dashboardSidebar(collapsed = FALSE, disable = FALSE,
@@ -30,7 +30,7 @@ shinyUI(
                                               
                                               
                                               #Github        
-                                              menuItem("Click for Github Repository", href = "https://github.com/rpengling/SURV675_HW4.git", icon = icon("link"))
+                                              menuItem("Click for Github Repository", href = "https://github.com/rpengling/SURV675_Final.git", icon = icon("link"))
                                  )
                 ), 
                 
@@ -57,7 +57,10 @@ shinyUI(
                     #Charts(Graphs)         
                     tabItem(tabName = "charts", 
                             fluidRow(
-                              box(title = "Please Select Country", status = "primary", solidHeader = T, uiOutput("inputwidget"), width = 4)),
+                              box(title = "Country", status = "primary", solidHeader = T, uiOutput("inputwidget"), width = 3),
+                              box(title = "Outcome Variable", status = "primary", solidHeader = T, uiOutput("outcomewidget"), width = 3),
+                              box(title = "Control Variable(s)", status = "primary", solidHeader = T, uiOutput("controlswidget"), width = 3),
+                              box(title = "Ploynomial Value", status = "primary", solidHeader = T, uiOutput("polywidget"), width = 3)),
                             
                             
                             fluidRow(
@@ -79,7 +82,11 @@ shinyUI(
                                      tabPanel("News Consumption", DT::dataTableOutput("bignew")), 
                                      tabPanel("Attitudes Towards Science", DT::dataTableOutput("bigsci"))
                               )
-                            )
+                            ), 
+                            
+                            
+                            fluidRow(
+                              box(title = "Click to Download Report", status = "danger", solidHeader = T, downloadButton("download_report", "Download Report"), width = 4))
                             
                             
                             

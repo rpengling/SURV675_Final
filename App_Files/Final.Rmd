@@ -63,8 +63,14 @@ can be tricky to set-up on the server).
 library(tidyverse)
 ```
 
+```{r}
+Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
+```
 
 
+```{r}
+
+```
 
 
 
