@@ -8,136 +8,12 @@ library(here)
 
 shinyServer(function(input, output, session){
   
+#########################################################
+  
+  
   #Datatable
   output$mydatatable <- DT::renderDT({
     Dat %>%
-      DT::datatable(options = list(scrollX = T))
-  })
-  
-  
-  #Graphs
-  
-  
-  #Dem by Country 
-  output$dem <- renderPlotly({
-    Dem %>%
-      dplyr::filter(Country == input$selected) %>%
-      dplyr::select(-Country) %>%
-      summarise_all(~ round(mean(.x, na.rm = TRUE), 2)) %>%
-      pivot_longer(cols = everything(), names_to = "Variable", values_to = "Average_Rating") %>% 
-      mutate(Variable = stringr::str_remove(Variable, "^[DNS]_")) %>%
-      plot_ly(
-        x = ~Variable, 
-        y = ~Average_Rating, 
-        type = "bar"
-      )
-  })
-  
-  
-  
-  #News by Country 
-  output$new <- renderPlotly({
-    plot_data <- AllComb_Fin %>%
-      dplyr::filter(Country == input$selected) %>% 
-      ungroup() %>%
-      dplyr::select(-Country) %>%
-      pivot_longer(
-        cols = 2:9, 
-        names_to = "Variable", 
-        values_to = "Proportion") %>%
-      mutate(
-        Variable = stringr::str_remove(Variable, "^[N]_"))
-    plot_ly(
-      data = plot_data,
-      x = ~Variable,                
-      y = ~Proportion,              
-      color = ~factor(Response),    
-      type = "bar", 
-      name = ~factor(Response)      
-    ) %>%
-      layout(
-        barmode = "stack",           
-        xaxis = list(title = "Variables"),
-        yaxis = list(title = "Proportion")
-      )
-  })
-  
-  #Science 
-  output$sci <- renderPlotly({
-    Sci %>% 
-      dplyr::filter(Country == input$selected) %>%
-      dplyr::select(-Country) %>%
-      summarise_all(~ round(mean(.x, na.rm = TRUE), 2)) %>%
-      pivot_longer(cols = everything(), names_to = "Variable", values_to = "Average_Rating") %>% 
-      mutate(Variable = stringr::str_remove(Variable, "^[DNS]_")) %>%
-      plot_ly(
-        x = ~Variable, 
-        y = ~Average_Rating, 
-        type = "bar") 
-    
-  })
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  #Tables 
-  
-  output$demo <- DT::renderDT({
-    Dem %>% 
-      dplyr::filter(Country == input$selected) %>% 
-      dplyr::select(-Country) %>% 
-      summarise_all(mean, na.rm = TRUE) %>% 
-      round(2) %>% 
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
-      DT::datatable(options = list(scrollX = T))
-  })
-  
-  output$news <- DT::renderDT({
-    AllComb_Fin %>% 
-      dplyr::filter(Country == input$selected) %>% 
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
-      DT::datatable(options = list(scrollX = T))
-  })
-  
-  output$science <- DT::renderDT({
-    Sci %>% 
-      dplyr::filter(Country == input$selected) %>% 
-      dplyr::select(-Country) %>% 
-      summarise_all(mean, na.rm = TRUE) %>% 
-      round(2) %>% 
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
-      DT::datatable(options = list(scrollX = T))
-  })
-  
-  
-  #Full data
-  output$bigdem <- DT::renderDT({
-    Dem %>% 
-      group_by(Country) %>%
-      summarise_all(~ round(mean(.x, na.rm = TRUE), 2)) %>% 
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
-      DT::datatable(options = list(scrollX = T))
-  })
-  
-  
-  output$bignew <- DT::renderDT({
-    AllComb_Fin %>%
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
-      DT::datatable(options = list(scrollX = TRUE)) 
-  })
-  
-  
-  output$bigsci <- DT::renderDT({
-    Sci %>% 
-      group_by(Country) %>%
-      summarise_all(~ round(mean(.x, na.rm = TRUE), 2)) %>% 
-      rename_with(~ stringr::str_remove(., "^[DNS]_")) %>%
       DT::datatable(options = list(scrollX = T))
   })
   
@@ -150,13 +26,13 @@ shinyServer(function(input, output, session){
   })
   #Outcome widget 
   output$outcomewidget <- renderUI({
-    selectInput("selected", "Select an Outcome Variable:", 
+    selectInput("chosen", "Select an Outcome Variable:", 
                 choices = c("GenRol", "Immig"), 
                 selected = "GenRol")
   })
   #Controls widget 
   output$controlswidget <- renderUI({
-    selectInput("selected", 
+    selectInput("controler", 
                 "Select Control Variable(s):", 
                 choices = c("Sex", "Edu"), 
                 selected = NULL,  
@@ -164,11 +40,125 @@ shinyServer(function(input, output, session){
   })
   #Poly widget 
   output$polywidget <- renderUI({
-    numericInput("num_input", "Enter a Numeric Value (1-5):", value = 1, min = 1, max = 5)
+    numericInput("num_input", "Enter a Numeric Value (1-5):", value = NULL, min = 1, max = 5)
   })
+  
+  
+####Explore Graphs 
+  output$GenExp <- renderPlotly({
+    plot_ly(AllExpGenDat, 
+            x = ~Variable, 
+            y = ~Average, 
+            color = ~Group, 
+            type = 'bar', 
+            text = ~paste("Group:", Group, "<br>Average:", Average),
+            hoverinfo = 'text') %>%
+      layout(title = "Average Attitude Towards Gender Roles by Group",
+             xaxis = list(title = "Variable Groups"),
+             yaxis = list(title = "Average Attitude Towards Gender Roles", range = c(1, 4)),
+             barmode = 'group')
+  })
+  
+  
+  output$ImmigExp <- renderPlotly({
+    plot_ly(AllExpImmigDat, 
+            x = ~Variable, 
+            y = ~Average, 
+            color = ~Group, 
+            type = 'bar', 
+            text = ~paste("Group:", Group, "<br>Average:", Average),
+            hoverinfo = 'text') %>%
+      layout(title = "Average Attitude Towards Immigration by Group",
+             xaxis = list(title = "Variable Groups"),
+             yaxis = list(title = "Average Attitude Towards Immigration", range = c(1, 4)),
+             barmode = 'group')
+  })
+  
+  
+  
+  
+  
+####Regression Graphs
+  output$GenReg <- renderPlotly({
+    Filt <- Dat %>%
+      dplyr::filter(Country == input$selected)
+    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
+    model_df <- broom::tidy(GenMod) 
     
+    plotly::plot_ly(
+      data = model_df,
+      x = ~term,
+      y = ~estimate,
+      type = 'scatter',
+      mode = 'markers+errorbars',
+      error_y = list(
+        type = 'data',
+        array = ~std.error,
+        visible = TRUE
+      )
+    ) %>%
+      plotly::layout(
+        title = "Scatter Plot of Model Coefficients",
+        xaxis = list(title = "Term"),
+        yaxis = list(title = "Estimate")
+      )
+  })
+  
+  output$ImmigReg <- renderPlotly({
+    Filt <- Dat %>%
+      dplyr::filter(Country == input$selected)
+    ImmigMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
+    model_df <- broom::tidy(ImmigMod) 
     
+    plotly::plot_ly(
+      data = model_df,
+      x = ~term,
+      y = ~estimate,
+      type = 'scatter',
+      mode = 'markers+errorbars',
+      error_y = list(
+        type = 'data',
+        array = ~std.error,
+        visible = TRUE
+      )
+    ) %>%
+      plotly::layout(
+        title = "Scatter Plot of Model Coefficients",
+        xaxis = list(title = "Term"),
+        yaxis = list(title = "Estimate")
+      )
+  })
+  
 
+  
+
+    
+    
+### Regression Table
+  output$GenModel <-DT::renderDT({
+    Filt <- Dat %>%
+      dplyr::filter(Country == input$selected)
+    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
+    broom::tidy(GenMod) %>%
+      dplyr::mutate(across(
+        where(is.numeric), 
+        ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
+      )) %>%
+      DT::datatable(options = list(scrollX = TRUE))
+  })
+  
+  output$ImmigModel <-DT::renderDT({ 
+    Filt <- Dat %>%
+    dplyr::filter(Country == input$selected) 
+    ImmMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
+    broom::tidy(ImmMod) %>%
+      dplyr::mutate(across(
+        where(is.numeric), 
+        ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
+      )) %>%
+      DT::datatable(options = list(scrollX = TRUE))
+  })
+  
   
   
   

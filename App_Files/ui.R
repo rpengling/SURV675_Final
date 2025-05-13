@@ -8,19 +8,19 @@ library(here)
 
 shinyUI(
   dashboardPage(skin = "blue",
-                dashboardHeader(title = "Exploring Attitudes towards Gender Roles and Immigration", titleWidth = 500, disable = FALSE), 
+                dashboardHeader(title = "Exploring Attitudes towards Gender Roles and Immigration: EVS Data", titleWidth = 700, disable = FALSE), 
                 
                 
                 dashboardSidebar(collapsed = FALSE, disable = FALSE,
-                                 sidebarMenu( id = 'sidebarmenu', 
+                                 sidebarMenu(id = 'sidebarmenu', 
                                               
                                               
                                               #About Page                      
                                               menuItem(text = "About", tabName = "about", icon = icon("earth-americas")), 
                                               
                                               
-                                              #charts          
-                                              menuItem("Graphs & Tables", tabName = "charts", icon = icon("square-poll-vertical")),
+                                              #explore          
+                                              menuItem("Exploration & Regression", tabName = "charts", icon = icon("line-chart")),
                                               
                                               
                                               
@@ -54,37 +54,41 @@ shinyUI(
                             p("Inglehart, R., C. Haerpfer, A. Moreno, C. Welzel, K. Kizilova, J. Diez-Medrano, M. Lagos, P. Norris, E. Ponarin & B. Puranen et al. (eds.). 2018. World Values Survey: Round Six - Country-Pooled Datafile. Madrid, Spain & Vienna, Austria: JD Systems Institute & WVSA Secretariat. doi.org/10.14281/18241.8")),
                     
                     
+                    
+                    
                     #Charts(Graphs)         
                     tabItem(tabName = "charts", 
+                          #Widgets
                             fluidRow(
                               box(title = "Country", status = "primary", solidHeader = T, uiOutput("inputwidget"), width = 3),
                               box(title = "Outcome Variable", status = "primary", solidHeader = T, uiOutput("outcomewidget"), width = 3),
                               box(title = "Control Variable(s)", status = "primary", solidHeader = T, uiOutput("controlswidget"), width = 3),
                               box(title = "Ploynomial Value", status = "primary", solidHeader = T, uiOutput("polywidget"), width = 3)),
                             
-                            
+                          
+                          
+                          
+                          #Exploration
                             fluidRow(
                               tabBox(id = "tabchart1", title = "Graphs",
-                                     tabPanel("Attitudes Towards Democracy", plotlyOutput("dem")), 
-                                     tabPanel("News Consumption", plotlyOutput("new")), 
-                                     tabPanel("Attitudes Towards Science", plotlyOutput("sci"))
+                                     tabPanel("Gender Role Exploration", plotlyOutput("GenExp")), 
+                                     tabPanel("Immigration Exploration", plotlyOutput("ImmigExp")), 
+                                     tabPanel("Gender Role Regression", plotlyOutput("GenReg")), 
+                                     tabPanel("Immigration Regression", plotlyOutput("ImmigReg"))
                               ), 
-                              tabBox(id = "tabchart3", side = "right", title = "Tables",
-                                     tabPanel("Attitudes Towards Democracy", DT::dataTableOutput("demo")), 
-                                     tabPanel("News Consumption", DT::dataTableOutput("news")),
-                                     tabPanel("Attitudes Towards Science", DT::dataTableOutput("science"))
-                              )
-                            ),
-                            
+
+                          #Regression   
                             fluidRow(
-                              tabBox(id = "tabchart2", title = "All Countries",
-                                     tabPanel("Attitudes Towards Democracy", DT::dataTableOutput("bigdem")), 
-                                     tabPanel("News Consumption", DT::dataTableOutput("bignew")), 
-                                     tabPanel("Attitudes Towards Science", DT::dataTableOutput("bigsci"))
+                              tabBox(id = "tabchart1", title = "Regression Results",
+                                     tabPanel("Gender Roles", DT::dataTableOutput("GenModel")), 
+                                     tabPanel("Immigration", DT::dataTableOutput("ImmigModel"))
                               )
                             ), 
                             
-                            
+
+                          
+                          
+                        #Download widget    
                             fluidRow(
                               box(title = "Click to Download Report", status = "danger", solidHeader = T, downloadButton("download_report", "Download Report"), width = 4))
                             
@@ -94,7 +98,7 @@ shinyUI(
                             
                             
                             
-                    ),
+                    )),
                     
                     
                     #Data
