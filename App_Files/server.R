@@ -90,6 +90,7 @@ shinyServer(function(input, output, session){
   
   
 ####Regression Graphs
+  ########### CHANGE THESE TO BE PREDICTED VALUE VS RESIDUALS ###########
   output$GenReg <- renderPlotly({
     Filt <- if (input$selected == "All") {
       Dat
