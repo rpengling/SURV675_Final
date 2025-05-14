@@ -2,9 +2,10 @@ library(tidyverse)
 library(shiny)
 library(here)
 
-setwd("/srv/connect/apps/App_Scripts")
-Dat <- read_csv("/www/CleanData.csv")
+setwd("/srv/connect/apps/EVS_Data_Exploration")
+Dat <- read_csv("www/CleanData.csv")
  
+#Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
 
 
 # create graph for overall relationship, need "select all" option for country

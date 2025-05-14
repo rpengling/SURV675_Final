@@ -68,8 +68,6 @@ Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv"
 ```
 
 
-# create graph for overall relationship, need "select all" option for country
-
 ```{r}
 Dat <- Dat %>%
   mutate(across(c(Sex, Edu, Country), as.factor))

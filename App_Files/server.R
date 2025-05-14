@@ -21,9 +21,20 @@ shinyServer(function(input, output, session){
   
   
   #Country widget 
+  All <- unique(Dat$Country)
+  
   output$inputwidget <- renderUI({
-    selectInput("selected", "Select a Country:", choices = unique(Dat$Country), selected = unique(Dat$Country)[1])
+    selectInput("selected", "Select a Country:", 
+                choices = c("All", as.character(All)), 
+                selected = "All")
   })
+  
+  observeEvent(input$selected, {
+    selected_countries <- if (input$selected == "All") All else input$selected
+  })
+  
+
+  
   #Outcome widget 
   output$outcomewidget <- renderUI({
     selectInput("chosen", "Select an Outcome Variable:", 
@@ -80,8 +91,11 @@ shinyServer(function(input, output, session){
   
 ####Regression Graphs
   output$GenReg <- renderPlotly({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    }
     GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
     model_df <- broom::tidy(GenMod) 
     
@@ -105,8 +119,11 @@ shinyServer(function(input, output, session){
   })
   
   output$ImmigReg <- renderPlotly({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    }
     ImmigMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
     model_df <- broom::tidy(ImmigMod) 
     
@@ -136,8 +153,11 @@ shinyServer(function(input, output, session){
     
 ### Regression Table
   output$GenModel <-DT::renderDT({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    }
     GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
     broom::tidy(GenMod) %>%
       dplyr::mutate(across(
@@ -148,8 +168,11 @@ shinyServer(function(input, output, session){
   })
   
   output$ImmigModel <-DT::renderDT({ 
-    Filt <- Dat %>%
-    dplyr::filter(Country == input$selected) 
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    } 
     ImmMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
     broom::tidy(ImmMod) %>%
       dplyr::mutate(across(
