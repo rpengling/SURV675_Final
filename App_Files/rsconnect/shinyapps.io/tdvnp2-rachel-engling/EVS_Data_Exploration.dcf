@@ -5,7 +5,7 @@ account: tdvnp2-rachel-engling
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14748994
-bundleId: 10278545
+bundleId: 10278558
 url: https://tdvnp2-rachel-engling.shinyapps.io/EVS_Data_Exploration/
 version: 1
 asMultiple: FALSE

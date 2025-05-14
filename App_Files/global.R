@@ -2,7 +2,7 @@ library(tidyverse)
 library(shiny)
 library(here)
 
-setwd("/srv/connect/apps/App_Scripts")
+setwd("/srv/connect/apps/App_Files")
 Dat <- read_csv("/www/CleanData.csv")
  
 
