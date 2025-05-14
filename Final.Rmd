@@ -18,14 +18,18 @@ output: html_document
   h3("Graphs"), 
     p("The 'Exploration' tab depicts the average value reported of the outcome variable of your choosing, based on respondents' age group, sex, and education level. The 'Regression' tab depicts a scatter plot of the the predicted versus the residuals from the regression."), 
 
-  h3("Regression Results") 
-This section depicts the results from the linear regression, influenced by which control and outcome variables you choose. By default, the regression formula predicts attitudes towards traditional gender roles on age. 
+  h3("Regression Results"), 
+    p("This section depicts the results from the linear regression, influenced by which control and outcome variables you choose. By default, the regression formula predicts attitudes towards traditional gender roles on age."), 
 
-Data
-You will see the display of the full dataset used for this app. 
+  h2("Data"), 
+    h4("You will see the display of the full dataset used for this app."), 
 
-Click for Github Repository 
-Click this tab will immediately open and navigate to the Github repository for this project where more information on the creation of this app can be located. 
+  h2("Click for Github Repository"), 
+    h4("Click this tab will immediately open and navigate to the Github repository for this project where more information on the creation of this app can be located.")
+
+
+ 
+ 
 
 
 
