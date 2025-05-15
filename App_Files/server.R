@@ -8,13 +8,19 @@ library(here)
 
 shinyServer(function(input, output, session){
   
-#########################################################
+  
+  
+  
+  
   
 ### Datatable
   output$mydatatable <- DT::renderDT({
     Dat %>%
       DT::datatable(options = list(scrollX = T))
   })
+  
+  
+  
   
   
   
@@ -32,14 +38,13 @@ shinyServer(function(input, output, session){
     selected_countries <- if (input$selected == "All") All else input$selected
   })
   
-
-  
   #Outcome widget 
   output$outcomewidget <- renderUI({
     selectInput("chosen", "Select an Outcome Variable:", 
                 choices = c("GenRol", "Immig"), 
                 selected = "GenRol")
   })
+  
   #Controls widget 
   output$controlswidget <- renderUI({
     selectInput("controler", 
@@ -48,10 +53,13 @@ shinyServer(function(input, output, session){
                 selected = NULL,  
                 multiple = TRUE)
   })
+  
   #Poly widget 
   output$polywidget <- renderUI({
-    numericInput("num_input", "Enter a Numeric Value (1-5):", value = NULL, min = 1, max = 5)
+    numericInput("num_input", "Enter a Numeric Value (1-5):", value = 1, min = 1, max = 5)
   })
+  
+  
   
   
   
@@ -78,6 +86,8 @@ shinyServer(function(input, output, session){
              barmode = 'group')
   })
   
+  
+  
   #Immig
   output$ImmigExp <- renderPlotly({
     Filt <- if (input$selected == "All") {
@@ -103,17 +113,36 @@ shinyServer(function(input, output, session){
   
   
   
+  
 ### Regression Graphs
-  #GenRol
-  output$GenReg <- renderPlotly({
+  output$regplot <- renderPlotly({
     Filt <- if (input$selected == "All") {
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
+    } 
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    outcome_var <- input$chosen
+    selected_vars <- input$controler 
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
     }
     
-    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
-    model_df <- broom::augment(GenMod) %>%
+    if (length(selected_vars) > 0) {
+      formula <- paste(outcome_var, "~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+    } else {
+      formula <- paste(outcome_var, "~", age_term)
+    }
+    
+    Mod <- lm(as.formula(formula), data = Filt)
+  
+    model_df <- broom::augment(Mod) %>%
       dplyr::select(.fitted, .resid)
     
     plotly::plot_ly(
@@ -124,11 +153,13 @@ shinyServer(function(input, output, session){
       mode = 'markers'
       ) %>%
       plotly::layout(
-        title = "Predicted Values vs Residuals for Gender Roles",
+        title = "Predicted Values vs Residuals",
         xaxis = list(title = "Predicted Values"),
         yaxis = list(title = "Residuals")
       )
   })
+  
+  
   
   #Immig
   output$ImmigReg <- renderPlotly({
@@ -136,9 +167,28 @@ shinyServer(function(input, output, session){
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
+    } 
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    outcome_var <- input$chosen
+    selected_vars <- input$controler
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
     }
     
-    ImmigMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
+    if (length(selected_vars) > 0) {
+      formula <- paste("Immig ~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+    } else {
+      formula <- paste("Immig ~", age_term)
+    }
+    
+    ImmigMod <- lm(as.formula(formula), data = Filt)
+    
     model_df <- broom::augment(ImmigMod) %>%
       dplyr::select(.fitted, .resid)
     
@@ -162,34 +212,115 @@ shinyServer(function(input, output, session){
     
     
 ### Regression Table
-  output$GenModel <-DT::renderDT({
+  #GenRol
+  output$reg <-DT::renderDT({
     Filt <- if (input$selected == "All") {
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
+    } 
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    outcome_var <- input$chosen
+    selected_vars <- input$controler 
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
     }
-    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
-    broom::tidy(GenMod) %>%
+    
+    if (length(selected_vars) > 0) {
+      formula <- paste(outcome_var, "~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+    } else {
+      formula <- paste(outcome_var, "~", age_term)
+    }
+    
+    Mod <- lm(as.formula(formula), data = Filt)
+    
+    broom::tidy(Mod) %>%
       dplyr::mutate(across(
         where(is.numeric), 
         ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
       )) %>%
-      DT::datatable(options = list(scrollX = TRUE))
+      dplyr::mutate(term = case_when(
+        grepl("poly\\(Age, [0-9]+\\)1", term) ~ "Age",
+        grepl("poly\\(Age, [0-9]+\\)2", term) ~ "Age\u00B2",
+        grepl("poly\\(Age, [0-9]+\\)3", term) ~ "Age\u00B3", 
+        grepl("poly\\(Age, [0-9]+\\)4", term) ~ "Age\u2074", 
+        grepl("poly\\(Age, [0-9]+\\)5", term) ~ "Age\u2075",
+        TRUE ~ term
+      )) %>%
+      dplyr::rename(
+        Term = term,
+        `Reg Coef` = estimate,
+        `SE` = std.error,
+        `t-Statistic` = statistic,
+        `p-Value` = p.value
+      ) %>%
+      DT::datatable(
+        options = list(scrollX = TRUE), 
+        rownames = FALSE, 
+        escape = FALSE
+      )
   })
   
+  
+  
+  #Immig
   output$ImmigModel <-DT::renderDT({ 
     Filt <- if (input$selected == "All") {
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
     } 
-    ImmMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    selected_vars <- input$controler
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
+    }
+    
+    if (length(selected_vars) > 0) {
+      formula <- paste("Immig ~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+    } else {
+      formula <- paste("Immig ~", age_term)
+    }
+    
+    ImmMod <- lm(as.formula(formula), data = Filt)
+  
     broom::tidy(ImmMod) %>%
       dplyr::mutate(across(
         where(is.numeric), 
         ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
       )) %>%
-      DT::datatable(options = list(scrollX = TRUE))
+      dplyr::mutate(term = case_when(
+        grepl("poly\\(Age, [0-9]+\\)1", term) ~ "Age",
+        grepl("poly\\(Age, [0-9]+\\)2", term) ~ "Age\u00B2",
+        grepl("poly\\(Age, [0-9]+\\)3", term) ~ "Age\u00B3", 
+        grepl("poly\\(Age, [0-9]+\\)4", term) ~ "Age\u2074", 
+        grepl("poly\\(Age, [0-9]+\\)5", term) ~ "Age\u2075",
+        TRUE ~ term
+      )) %>%
+      dplyr::rename(
+        Term = term,
+        `Reg Coef` = estimate,
+        `SE` = std.error,
+        `t-Statistic` = statistic,
+        `p-Value` = p.value
+      ) %>%
+      DT::datatable(
+        options = list(scrollX = TRUE), 
+        rownames = FALSE, 
+        escape = FALSE
+      )
   })
   
   
