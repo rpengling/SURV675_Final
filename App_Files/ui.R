@@ -45,7 +45,7 @@ shinyUI(
                     
                     #About        
                     tabItem(tabName = "about", 
-                            h2("Welcome!"), 
+                            h1("Welcome!"), 
                             h4("This app is designed to let you explore data from the European Value Study's 2017 Wave."),
                             p("Please use the sidebar menu to navigate through the different pages. Continue reading for more information about the pages."), 
                             

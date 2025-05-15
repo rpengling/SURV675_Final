@@ -46,14 +46,12 @@ Dat <- Dat %>%
   ) %>% 
   ungroup() 
  
-
-  
 Dat1 <- Dat
 
 AllGen_long <- Dat1 %>%
-  select(Age_Group, Sex, Edu, 
+  select(Age_Group, Sex, Edu, Country,
          Ave_GenRol_Age, Ave_GenRol_Sex, 
-         Ave_GenRol_Edu) %>%
+         Ave_GenRol_Edu, Ave_GenRol_Country) %>%
   distinct() %>%
   pivot_longer(cols = starts_with("Ave_GenRol"), 
                names_to = "Variable", 
@@ -62,22 +60,26 @@ AllGen_long <- Dat1 %>%
     Group = case_when(
       Variable == "Ave_GenRol_Age" ~ as.character(Age_Group),
       Variable == "Ave_GenRol_Sex" ~ as.character(Sex),
-      Variable == "Ave_GenRol_Edu" ~ as.character(Edu)
+      Variable == "Ave_GenRol_Edu" ~ as.character(Edu), 
+      Variable == "Ave_GenRol_Country" ~as.character(Country)
     ),
     Variable = recode(Variable,
                       "Ave_GenRol_Age" = "Age_Group",
                       "Ave_GenRol_Sex" = "Sex",
-                      "Ave_GenRol_Edu" = "Edu")
+                      "Ave_GenRol_Edu" = "Edu", 
+                      "Ave_GenRol_Country" = "Country")
   ) 
 AllExpGenDat <- AllGen_long %>% 
-  select(Variable, Average, Group) %>% unique()
- 
+  filter(Variable != "Country") %>%
+  select(Variable, Average, Group) %>% unique() 
 
-  
+SelectedExpGenDat <- AllGen_long %>% 
+  select(Country, Variable, Average, Group) %>% unique()
+
 AllImmig_long <- Dat1 %>%
   select(Age_Group, Sex, Edu, 
          Ave_Immig_Age, Ave_Immig_Sex, 
-         Ave_Immig_Edu) %>%
+         Ave_Immig_Edu, Country, Ave_Immig_Country) %>%
   distinct() %>%
   pivot_longer(cols = starts_with("Ave_Immig"), 
                names_to = "Variable", 
@@ -86,13 +88,18 @@ AllImmig_long <- Dat1 %>%
     Group = case_when(
       Variable == "Ave_Immig_Age" ~ as.character(Age_Group),
       Variable == "Ave_Immig_Sex" ~ as.character(Sex),
-      Variable == "Ave_Immig_Edu" ~ as.character(Edu)
+      Variable == "Ave_Immig_Edu" ~ as.character(Edu),
+      Variable == "Ave_Immig_Country" ~as.character(Country)
     ),
     Variable = recode(Variable,
                       "Ave_Immig_Age" = "Age_Group",
                       "Ave_Immig_Sex" = "Sex",
-                      "Ave_Immig_Edu" = "Edu")
+                      "Ave_Immig_Edu" = "Edu", 
+                      "Ave_Immig_Country" = "Country")
   ) 
 AllExpImmigDat <- AllImmig_long %>% 
+  filter(Variable != "Country") %>%
   select(Variable, Average, Group) %>% unique()
- 
+
+SelectedExpImmigDat <- AllImmig_long %>% 
+  select(Country, Variable, Average, Group) %>% unique()

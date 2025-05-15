@@ -10,8 +10,7 @@ shinyServer(function(input, output, session){
   
 #########################################################
   
-  
-  #Datatable
+### Datatable
   output$mydatatable <- DT::renderDT({
     Dat %>%
       DT::datatable(options = list(scrollX = T))
@@ -19,7 +18,7 @@ shinyServer(function(input, output, session){
   
   
   
-  
+### Input Widgets 
   #Country widget 
   All <- unique(Dat$Country)
   
@@ -55,9 +54,18 @@ shinyServer(function(input, output, session){
   })
   
   
-####Explore Graphs 
+  
+  
+### Explore Graphs 
+  #GenRol
   output$GenExp <- renderPlotly({
-    plot_ly(AllExpGenDat, 
+    Filt <- if (input$selected == "All") {
+      AllExpGenDat
+    } else {
+      SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+    }
+    
+    plot_ly(Filt, 
             x = ~Variable, 
             y = ~Average, 
             color = ~Group, 
@@ -70,9 +78,15 @@ shinyServer(function(input, output, session){
              barmode = 'group')
   })
   
-  
+  #Immig
   output$ImmigExp <- renderPlotly({
-    plot_ly(AllExpImmigDat, 
+    Filt <- if (input$selected == "All") {
+      AllExpImmigDat
+    } else {
+      SelectedExpImmigDat %>% dplyr::filter(Country == input$selected)
+    }
+    
+    plot_ly(Filt,
             x = ~Variable, 
             y = ~Average, 
             color = ~Group, 
@@ -89,61 +103,56 @@ shinyServer(function(input, output, session){
   
   
   
-####Regression Graphs
-  ########### CHANGE THESE TO BE PREDICTED VALUE VS RESIDUALS ###########
+### Regression Graphs
+  #GenRol
   output$GenReg <- renderPlotly({
     Filt <- if (input$selected == "All") {
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
     }
+    
     GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
-    model_df <- broom::tidy(GenMod) 
+    model_df <- broom::augment(GenMod) %>%
+      dplyr::select(.fitted, .resid)
     
     plotly::plot_ly(
       data = model_df,
-      x = ~term,
-      y = ~estimate,
+      x = ~.fitted,
+      y = ~.resid,
       type = 'scatter',
-      mode = 'markers+errorbars',
-      error_y = list(
-        type = 'data',
-        array = ~std.error,
-        visible = TRUE
-      )
-    ) %>%
+      mode = 'markers'
+      ) %>%
       plotly::layout(
-        title = "Scatter Plot of Model Coefficients",
-        xaxis = list(title = "Term"),
-        yaxis = list(title = "Estimate")
+        title = "Predicted Values vs Residuals for Gender Roles",
+        xaxis = list(title = "Predicted Values"),
+        yaxis = list(title = "Residuals")
       )
   })
   
+  #Immig
   output$ImmigReg <- renderPlotly({
     Filt <- if (input$selected == "All") {
       Dat
     } else {
       Dat %>% dplyr::filter(Country == input$selected)
     }
+    
     ImmigMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
-    model_df <- broom::tidy(ImmigMod) 
+    model_df <- broom::augment(ImmigMod) %>%
+      dplyr::select(.fitted, .resid)
     
     plotly::plot_ly(
       data = model_df,
-      x = ~term,
-      y = ~estimate,
+      x = ~.fitted,
+      y = ~.resid,
       type = 'scatter',
-      mode = 'markers+errorbars',
-      error_y = list(
-        type = 'data',
-        array = ~std.error,
-        visible = TRUE
-      )
+      mode = 'markers'
     ) %>%
       plotly::layout(
-        title = "Scatter Plot of Model Coefficients",
-        xaxis = list(title = "Term"),
-        yaxis = list(title = "Estimate")
+        title = "Predicted Values vs Residuals for Immigration",
+        xaxis = list(title = "Predicted Values"),
+        yaxis = list(title = "Residuals")
       )
   })
   
@@ -186,7 +195,9 @@ shinyServer(function(input, output, session){
   
   
   
-  #Report widget 
+  
+  
+### Report widget 
   output$download_report <- downloadHandler(
     filename = function() {
       paste("Report_for_", input$country, ".pdf", sep = "")  
