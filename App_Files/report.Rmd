@@ -1,0 +1,49 @@
+---
+title: "Dynamic Report"
+output: html_document 
+params:
+  country: "All"
+  outcome: "GenRol"
+  controls: NULL
+  poly_degree: 1
+  reg_plot_path: NULL
+  exp_plot_path: NULL
+  reg_table_path: NULL
+---
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(readr)
+```
+
+# Report for `r params$country`
+
+## Variables Chosen
+### Selected Outcome Variable
+`r params$outcome`
+
+### Control Variables
+`r if (length(params$controls) > 0) paste(params$controls, collapse = ", ") else "None"`
+
+### Polynomial Degree for Age
+`r params$poly_degree`
+
+## Analyses
+### Exploratory Plot 
+```{r, echo=FALSE}
+knitr::include_graphics(params$exp_plot_path)
+```
+
+### Regression Plot
+```{r, echo=FALSE}
+knitr::include_graphics(params$reg_plot_path) 
+```
+
+### Regression Table
+```{r, echo=FALSE}
+reg_table <- read.csv(params$reg_table_path)
+knitr::kable(reg_table, caption = "Regression Results", format = "html", digits = 4)
+```
+
+
+

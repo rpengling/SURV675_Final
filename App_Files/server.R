@@ -5,6 +5,7 @@ library(vroom)
 library(plotly)
 library(DT)
 library(here) 
+library(reticulate)
 
 shinyServer(function(input, output, session){
   
@@ -210,20 +211,105 @@ shinyServer(function(input, output, session){
       )
   })
 
-  
+##############################################################################################################
   
 ### Report widget 
   output$download_report <- downloadHandler(
     filename = function() {
-      paste("Report_for_", input$country, ".pdf", sep = "")  
+      paste("Report_for_", input$selected, ".html", sep = "")  
     },
     content = function(file) {
-      report_content <- generate_report(input$country)
+      user_temp <- "C:/Users/Owner/Documents/shiny_temp"
+      if (!dir.exists(user_temp)) dir.create(user_temp)
       
-      write(report_content, file)
+      reg_plot_path <- file.path(user_temp, "reg_plot.png")
+      exp_plot_path <- file.path(user_temp, "exp_plot.png")
+      reg_table_path <- file.path(user_temp, "reg_table.csv")
+      
+      Filt <- if (input$selected == "All") {
+        Dat
+      } else {
+        Dat %>% dplyr::filter(Country == input$selected)
+      }
+      Filt <- Filt %>% dplyr::filter(!is.na(Age))
+      
+      outcome_var <- input$chosen
+      selected_vars <- input$controler
+      poly_degree <- input$num_input
+      age_term <- if (poly_degree == 1) {
+        "Age"
+      } else {
+        paste0("poly(Age, ", poly_degree, ")")
+      }
+      if (length(selected_vars) > 0) {
+        formula <- paste(outcome_var, " ~ ", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+      } else {
+        formula <- paste(outcome_var, " ~ ", age_term)
+      }
+      Mod <- lm(as.formula(formula), data = Filt)
+      
+      reg_plot <- plotly::plot_ly(
+        data = broom::augment(Mod),
+        x = ~.fitted,
+        y = ~.resid,
+        type = 'scatter',
+        mode = 'markers'
+      ) %>%
+        plotly::layout(
+          title = "Predicted Values vs Residuals",
+          xaxis = list(title = "Predicted Values"),
+          yaxis = list(title = "Residuals")
+        )
+      kaleido(reg_plot, file = reg_plot_path)
+      
+      exp_data <- if (input$selected == "All") {
+        AllExpGenDat
+      } else {
+        SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+      }
+      exp_plot <- plotly::plot_ly(
+        exp_data,
+        x = ~Variable,
+        y = ~Average,
+        color = ~Group,
+        type = 'bar',
+        text = ~paste("Group:", Group, "<br>Average:", Average),
+        hoverinfo = 'text'
+      ) %>%
+        plotly::layout(
+          title = "Average Attitude by Group",
+          xaxis = list(title = "Variable Groups"),
+          yaxis = list(title = "Average", range = c(1, 4)),
+          barmode = 'group'
+        )
+      kaleido(exp_plot, file = exp_plot_path)
+      
+      reg_table <- broom::tidy(Mod)
+      write.csv(reg_table, reg_table_path, row.names = FALSE)
+      
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      rmarkdown::render(
+        tempReport,
+        output_file = file,
+        params = list(
+          country = input$selected,
+          outcome = input$chosen,
+          controls = input$controler,
+          poly_degree = input$num_input,
+          reg_plot_path = reg_plot_path,
+          exp_plot_path = exp_plot_path,
+          reg_table_path = reg_table_path
+        ),
+        envir = new.env(parent = globalenv())
+      )
     }
   )
   
+  
+  
+#######################################################################
   
 }
 )
