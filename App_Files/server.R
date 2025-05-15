@@ -65,37 +65,26 @@ shinyServer(function(input, output, session){
   
   
 ### Explore Graphs 
-  #GenRol
-  output$GenExp <- renderPlotly({
-    Filt <- if (input$selected == "All") {
-      AllExpGenDat
-    } else {
-      SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+  output$exp <- renderPlotly({
+    if (input$chosen == "GenRol") {
+      Filt <- if (input$selected == "All") {
+        AllExpGenDat
+      } else {
+        SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+      }
+      plot_title <- "Average Attitude Towards Gender Roles by Group"
+      y_title <- "Average Attitude Towards Gender Roles"
+    } else if (input$chosen == "Immig") {
+      Filt <- if (input$selected == "All") {
+        AllExpImmigDat
+      } else {
+        SelectedExpImmigDat %>% dplyr::filter(Country == input$selected)
+      }
+      plot_title <- "Average Attitude Towards Immigration by Group"
+      y_title <- "Average Attitude Towards Immigration"
     }
     
-    plot_ly(Filt, 
-            x = ~Variable, 
-            y = ~Average, 
-            color = ~Group, 
-            type = 'bar', 
-            text = ~paste("Group:", Group, "<br>Average:", Average),
-            hoverinfo = 'text') %>%
-      layout(title = "Average Attitude Towards Gender Roles by Group",
-             xaxis = list(title = "Variable Groups"),
-             yaxis = list(title = "Average Attitude Towards Gender Roles", range = c(1, 4)),
-             barmode = 'group')
-  })
-  
-  
-  
-  #Immig
-  output$ImmigExp <- renderPlotly({
-    Filt <- if (input$selected == "All") {
-      AllExpImmigDat
-    } else {
-      SelectedExpImmigDat %>% dplyr::filter(Country == input$selected)
-    }
-    
+    # Create the plot
     plot_ly(Filt,
             x = ~Variable, 
             y = ~Average, 
@@ -103,12 +92,14 @@ shinyServer(function(input, output, session){
             type = 'bar', 
             text = ~paste("Group:", Group, "<br>Average:", Average),
             hoverinfo = 'text') %>%
-      layout(title = "Average Attitude Towards Immigration by Group",
-             xaxis = list(title = "Variable Groups"),
-             yaxis = list(title = "Average Attitude Towards Immigration", range = c(1, 4)),
-             barmode = 'group')
+      layout(
+        title = plot_title,
+        xaxis = list(title = "Variable Groups"),
+        yaxis = list(title = y_title, range = c(1, 4)),
+        barmode = 'group'
+      )
   })
-  
+ 
   
   
   
@@ -135,7 +126,7 @@ shinyServer(function(input, output, session){
     }
     
     if (length(selected_vars) > 0) {
-      formula <- paste(outcome_var, "~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+      formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
     } else {
       formula <- paste(outcome_var, "~", age_term)
     }
@@ -160,59 +151,11 @@ shinyServer(function(input, output, session){
   })
   
   
+ 
   
-  #Immig
-  output$ImmigReg <- renderPlotly({
-    Filt <- if (input$selected == "All") {
-      Dat
-    } else {
-      Dat %>% dplyr::filter(Country == input$selected)
-    } 
-    
-    Filt <- Filt %>% dplyr::filter(!is.na(Age))
-    
-    outcome_var <- input$chosen
-    selected_vars <- input$controler
-    poly_degree <- input$num_input
-    
-    age_term <- if (poly_degree == 1) {
-      "Age"
-    } else {
-      paste0("poly(Age, ", poly_degree, ")")
-    }
-    
-    if (length(selected_vars) > 0) {
-      formula <- paste("Immig ~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
-    } else {
-      formula <- paste("Immig ~", age_term)
-    }
-    
-    ImmigMod <- lm(as.formula(formula), data = Filt)
-    
-    model_df <- broom::augment(ImmigMod) %>%
-      dplyr::select(.fitted, .resid)
-    
-    plotly::plot_ly(
-      data = model_df,
-      x = ~.fitted,
-      y = ~.resid,
-      type = 'scatter',
-      mode = 'markers'
-    ) %>%
-      plotly::layout(
-        title = "Predicted Values vs Residuals for Immigration",
-        xaxis = list(title = "Predicted Values"),
-        yaxis = list(title = "Residuals")
-      )
-  })
-  
-
-  
-
     
     
 ### Regression Table
-  #GenRol
   output$reg <-DT::renderDT({
     Filt <- if (input$selected == "All") {
       Dat
@@ -233,7 +176,7 @@ shinyServer(function(input, output, session){
     }
     
     if (length(selected_vars) > 0) {
-      formula <- paste(outcome_var, "~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+      formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
     } else {
       formula <- paste(outcome_var, "~", age_term)
     }
@@ -266,66 +209,7 @@ shinyServer(function(input, output, session){
         escape = FALSE
       )
   })
-  
-  
-  
-  #Immig
-  output$ImmigModel <-DT::renderDT({ 
-    Filt <- if (input$selected == "All") {
-      Dat
-    } else {
-      Dat %>% dplyr::filter(Country == input$selected)
-    } 
-    
-    Filt <- Filt %>% dplyr::filter(!is.na(Age))
-    
-    selected_vars <- input$controler
-    poly_degree <- input$num_input
-    
-    age_term <- if (poly_degree == 1) {
-      "Age"
-    } else {
-      paste0("poly(Age, ", poly_degree, ")")
-    }
-    
-    if (length(selected_vars) > 0) {
-      formula <- paste("Immig ~", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
-    } else {
-      formula <- paste("Immig ~", age_term)
-    }
-    
-    ImmMod <- lm(as.formula(formula), data = Filt)
-  
-    broom::tidy(ImmMod) %>%
-      dplyr::mutate(across(
-        where(is.numeric), 
-        ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
-      )) %>%
-      dplyr::mutate(term = case_when(
-        grepl("poly\\(Age, [0-9]+\\)1", term) ~ "Age",
-        grepl("poly\\(Age, [0-9]+\\)2", term) ~ "Age\u00B2",
-        grepl("poly\\(Age, [0-9]+\\)3", term) ~ "Age\u00B3", 
-        grepl("poly\\(Age, [0-9]+\\)4", term) ~ "Age\u2074", 
-        grepl("poly\\(Age, [0-9]+\\)5", term) ~ "Age\u2075",
-        TRUE ~ term
-      )) %>%
-      dplyr::rename(
-        Term = term,
-        `Reg Coef` = estimate,
-        `SE` = std.error,
-        `t-Statistic` = statistic,
-        `p-Value` = p.value
-      ) %>%
-      DT::datatable(
-        options = list(scrollX = TRUE), 
-        rownames = FALSE, 
-        escape = FALSE
-      )
-  })
-  
-  
-  
-  
+
   
   
 ### Report widget 

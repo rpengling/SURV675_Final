@@ -83,20 +83,17 @@ shinyUI(
                           
                           #Exploration
                             fluidRow(
+                              
                               tabBox(id = "tabchart1", title = "Graphs",
-                                     tabPanel("Gender Role Exploration", plotlyOutput("GenExp")), 
-                                     tabPanel("Immigration Exploration", plotlyOutput("ImmigExp")), 
-                                     tabPanel("Gender Role Regression", plotlyOutput("GenReg")), 
-                                     tabPanel("Immigration Regression", plotlyOutput("ImmigReg"))
-                              ), 
+                                     tabPanel(title = "Exploration", plotlyOutput("exp")), 
+                                     tabPanel(title = "Regresssion", plotlyOutput("regplot"))
+                                     ),
 
-                          #Regression   
-                            fluidRow(
-                              tabBox(id = "tabchart1", title = "Regression Results",
-                                     tabPanel("Gender Roles", DT::dataTableOutput("GenModel")), 
-                                     tabPanel("Immigration", DT::dataTableOutput("ImmigModel"))
-                              )
-                            ), 
+                              
+                              box(title = "Regresssion Results", status = "primary", solidHeader = F, DT::dataTableOutput("reg")
+                                  )
+
+                              ), 
                             
 
                           
@@ -111,7 +108,7 @@ shinyUI(
                             
                             
                             
-                    )),
+                    ),
                     
                     
                     #Data
