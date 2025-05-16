@@ -13,13 +13,16 @@ output: html_document
     h4("Here you will find four boxes where you can select different variables and manipulate the graphs, tables, and regression formula."), 
     
   h3("Selection Boxes"), 
-    p("The 'Country' box contains a dropdown where you can select a specific country you are interested in. The default is to show you all countries contain within the dataset. The 'Outcome Variable' box lets you select which of the outcome variables you are interested in investigating. The options are 'GenRol' which represents the attitudes towards traditional gender roles where a higher values reported indicates more positive views on traditional roles, such as believing children suffer if the mother works. The second option, 'Immig, is representative of attitudes towards immigration where higher values reported indicate more positive views towards immigration, such as believing people of the nation should not be given priority over immigrants if jobs are scarce. The 'Control Variable(s)' box lets you select how many control variables you would like considered in the regression calculation. You can select 'Sex' and/or 'Edu', for level of education, or leave the box empty. 'Age' is automatically a part of the regression formula. 'Polynomial Value' also influences the regression formula by changing the number of polynomials of age in the regression, with the options of 1, 2, 3, 4, and 5. If you choose to enter 3, the regression will contain 'Age + Age^2^ + Age^3^'."), 
+    p("The 'Country' box contains a dropdown where you can select a specific country you are interested in. The default is to show you all countries contain within the dataset. The 'Outcome Variable' box lets you select which of the outcome variables you are interested in investigating. The options are 'GenRol' which represents the attitudes towards traditional gender roles where a higher values reported indicates more positive views on traditional roles, such as believing children suffer if the mother works. The second option, 'Immig, is representative of attitudes towards immigration where higher values reported indicate more positive views towards immigration, such as believing people of the nation should not be given priority over immigrants if jobs are scarce. The 'Control Variable(s)' box lets you select how many control variables you would like considered in the regression calculation. You can select 'Sex' and/or 'Edu', for level of education, or leave the box empty. 'Age' is automatically a part of the regression formula. 'Polynomial Value' also influences the regression formula by changing the number of polynomials of age in the regression, with the options of 1, 2, 3, 4, and 5."), 
 
   h3("Graphs"), 
     p("The 'Exploration' tab depicts the average value reported of the outcome variable of your choosing, based on respondents' age group, sex, and education level. The 'Regression' tab depicts a scatter plot of the the predicted versus the residuals from the regression."), 
 
   h3("Regression Results"), 
     p("This section depicts the results from the linear regression, influenced by which control and outcome variables you choose. By default, the regression formula predicts attitudes towards traditional gender roles on age."), 
+
+  h3("Download Report"), 
+    h5("If you would like to download a copy of the results based on your selected inputs, click to download an HTML file of the graphs and regression table."),
 
   h2("Data"), 
     h4("You will see the display of the full dataset used for this app."), 
@@ -88,15 +91,14 @@ can be tricky to set-up on the server).
 
 
 
-
+#Library & Loading Data
 ```{r}
 library(tidyverse)
-```
 
-```{r}
 Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
 ```
 
+#General Data Cleaning & Manipulation
 ```{r}
 Dat <- Dat %>%
   mutate(across(c(Sex, Edu, Country), ~ fct_explicit_na(as.factor(.), na_level = "Missing")))
@@ -135,6 +137,7 @@ Dat <- Dat %>%
   ungroup() 
 ```
 
+#Exploratory Data for Gender Roles
 ```{r}
 Dat1 <- Dat
 
@@ -178,6 +181,7 @@ SelectedExpGenDat <- AllGen_long %>%
   select(Country, Variable, Average, Group) %>% unique()
 ```
 
+#Exploratory Immigration Data
 ```{r}
 AllImmig_long <- Dat1 %>% 
   mutate(
@@ -218,8 +222,6 @@ SelectedExpImmigDat <- AllImmig_long %>%
   select(Country, Variable, Average, Group) %>% unique()
 ```
 
-
-
 #Making static graph for report
 ```{r}
 library(RColorBrewer)
@@ -246,60 +248,4 @@ if (num_groups <= length(palette1)) {
           theme_minimal()
         
 ```
-
-
-
-exp_data <- SelectedExpGenDat %>% 
-  dplyr::filter(Country == "Germany") %>%
-  mutate( 
-    Group = ifelse(is.na(Group), "NA", Group)
-    ) %>% 
-  mutate(Group_fct = factor(Group), 
-         Variable = as.factor(Variable))
-
-
-filter(Variable == "Sex") %>% 
-  Group = factor(Group, levels = levels(Group)[])
-levels = levels(Group_fct)[c(2, 1, 3)])
-        
-A. "Age_Group" 
-B. "Country" 
-C. "Edu" 
-D. "Sex"
-
-
-        1. "Completed Elementary"  
-        2. "Completed Secondary"   
-        3. "Completed Technical"   
-        4. "Completed University"  
-        5. "Elder Adult"           
-        6. "Female"  
-        7. "Germany" 
-        8. "Incomplete Elementary" 
-        9. "Incomplete Secondary"  
-        10. "Incomplete Technical"  
-        11. "Incomplete University" 
-        12. "Male"   
-        13. "Middle Adult"          
-        14. "NA"                    
-        15. "Senior Adult"          
-        16. "Young Adult"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -1,4 +1,5 @@
 ---
+title: "EVS 2017 Data Exploration & Analysis"
 output: html_document 
 params:
   country: "All"
@@ -19,27 +20,30 @@ library(RColorBrewer)
 # Report for `r params$country`
 
 ## Variables Chosen
-### Selected Outcome Variable
-`r params$outcome`
 
-### Control Variables
-`r if (length(params$controls) > 0) paste(params$controls, collapse = ", ") else "None"`
+#### Selected Outcome Variable
+`r ifelse(params$outcome == "GenRol", "Attitudes towards Traditional Gender Roles", "Attitudes towards Immigration")`
 
-### Polynomial Degree for Age
+#### Control Variables
+`r if (length(params$controls) > 0) paste(ifelse(params$controls == "Edu", "Education", params$controls), collapse = ", ") else "None"`
+
+#### Polynomial Degree for Age
 `r params$poly_degree`
 
-## Analyses
-### Exploratory Plot 
+
+## Graphs
+
 ```{r, echo=FALSE}
 knitr::include_graphics(params$exp_plot_path)
 ```
 
-### Regression Plot
 ```{r, echo=FALSE}
 knitr::include_graphics(params$reg_plot_path) 
 ```
 
-### Regression Table
+
+## Regression Table
+
 ```{r, echo=FALSE}
 reg_table <- read.csv(params$reg_table_path) 
 reg_table <- reg_table %>% 
@@ -66,5 +70,5 @@ pander(reg_table,
     caption = "Data: EVS 2017.")
 ```
 
-
+#### For more information, please access the GitHub Repository [here](https://github.com/rpengling/SURV675_Final.git)
 
