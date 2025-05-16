@@ -1,5 +1,4 @@
 ---
-title: "Dynamic Report"
 output: html_document 
 params:
   country: "All"
@@ -12,8 +11,9 @@ params:
 ---
 ```{r setup, include=FALSE}
 library(knitr)
-library(kableExtra)
+library(pander)
 library(readr)
+library(RColorBrewer)
 ```
 
 # Report for `r params$country`
@@ -41,8 +41,29 @@ knitr::include_graphics(params$reg_plot_path)
 
 ### Regression Table
 ```{r, echo=FALSE}
-reg_table <- read.csv(params$reg_table_path)
-knitr::kable(reg_table, caption = "Regression Results", format = "html", digits = 4)
+reg_table <- read.csv(params$reg_table_path) 
+reg_table <- reg_table %>% 
+  dplyr::mutate(across(
+        where(is.numeric), 
+        ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
+      )) %>%
+      dplyr::mutate(term = case_when(
+        grepl("poly\\(Age, [0-9]+\\)1", term) ~ "Age",
+        grepl("poly\\(Age, [0-9]+\\)2", term) ~ "Age\u00B2",
+        grepl("poly\\(Age, [0-9]+\\)3", term) ~ "Age\u00B3", 
+        grepl("poly\\(Age, [0-9]+\\)4", term) ~ "Age\u2074", 
+        grepl("poly\\(Age, [0-9]+\\)5", term) ~ "Age\u2075",
+        TRUE ~ term
+      )) %>%
+      dplyr::rename(
+        Term = term,
+        `Reg Coef` = estimate,
+        `SE` = std.error,
+        `t-Statistic` = statistic,
+        `p-Value` = p.value
+      )
+pander(reg_table,
+    caption = "Data: EVS 2017.")
 ```
 
 

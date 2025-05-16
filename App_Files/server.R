@@ -5,7 +5,8 @@ library(vroom)
 library(plotly)
 library(DT)
 library(here) 
-library(reticulate)
+library(pander) 
+library(RColorBrewer)
 
 shinyServer(function(input, output, session){
   
@@ -85,7 +86,6 @@ shinyServer(function(input, output, session){
       y_title <- "Average Attitude Towards Immigration"
     }
     
-    # Create the plot
     plot_ly(Filt,
             x = ~Variable, 
             y = ~Average, 
@@ -219,11 +219,10 @@ shinyServer(function(input, output, session){
       paste("Report_for_", input$selected, ".html", sep = "")  
     },
     content = function(file) {
-      user_temp <- "C:/Users/Owner/Documents/shiny_temp"
-      if (!dir.exists(user_temp)) dir.create(user_temp)
+      user_temp <- "C:/Users/Owner/SURV675_Final/Reports"
       
-      reg_plot_path <- file.path(user_temp, "reg_plot.png")
-      exp_plot_path <- file.path(user_temp, "exp_plot.png")
+      reg_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/reg_plot.png"
+      exp_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/exp_plot.png"
       reg_table_path <- file.path(user_temp, "reg_table.csv")
       
       Filt <- if (input$selected == "All") {
@@ -241,48 +240,47 @@ shinyServer(function(input, output, session){
       } else {
         paste0("poly(Age, ", poly_degree, ")")
       }
+      
       if (length(selected_vars) > 0) {
-        formula <- paste(outcome_var, " ~ ", age_term, paste(selected_vars, collapse = " + "), sep = " + ")
+        formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
       } else {
         formula <- paste(outcome_var, " ~ ", age_term)
       }
+      
       Mod <- lm(as.formula(formula), data = Filt)
       
-      reg_plot <- plotly::plot_ly(
-        data = broom::augment(Mod),
-        x = ~.fitted,
-        y = ~.resid,
-        type = 'scatter',
-        mode = 'markers'
-      ) %>%
-        plotly::layout(
-          title = "Predicted Values vs Residuals",
-          xaxis = list(title = "Predicted Values"),
-          yaxis = list(title = "Residuals")
-        )
-      kaleido(reg_plot, file = reg_plot_path)
+      reg_plot <- ggplot(broom::augment(Mod), aes(x = .fitted, y = .resid)) +
+        geom_point() +
+        labs(title = "Predicted Values vs Residuals", x = "Predicted Values", y = "Residuals") +
+        theme_minimal()
+      
+      ggsave(filename = reg_plot_path, plot = reg_plot, device = "png", width = 5, height = 5)
       
       exp_data <- if (input$selected == "All") {
-        AllExpGenDat
+        AllExpGenDat 
       } else {
-        SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+        SelectedExpGenDat %>% dplyr::filter(Country == input$selected) 
       }
-      exp_plot <- plotly::plot_ly(
-        exp_data,
-        x = ~Variable,
-        y = ~Average,
-        color = ~Group,
-        type = 'bar',
-        text = ~paste("Group:", Group, "<br>Average:", Average),
-        hoverinfo = 'text'
-      ) %>%
-        plotly::layout(
-          title = "Average Attitude by Group",
-          xaxis = list(title = "Variable Groups"),
-          yaxis = list(title = "Average", range = c(1, 4)),
-          barmode = 'group'
-        )
-      kaleido(exp_plot, file = exp_plot_path)
+      num_groups <- length(unique(exp_data$Group))
+      
+      palette1 <- brewer.pal(12, "Set3") 
+      palette2 <- brewer.pal(8, "Set2")      
+      
+      if (num_groups <= length(palette1)) {
+        colors_to_use <- palette1[1:num_groups]
+      } else {
+        colors_to_use <- c(palette1, palette2)[1:num_groups]
+      }
+      
+      exp_plot <- ggplot(exp_data, aes(x = Variable, y = Average, fill = Group)) +
+        geom_bar(stat = "identity", position = "dodge") + 
+        scale_fill_manual(values = colors_to_use) +
+        labs(title = "Average Attitude by Group", x = "Variable Groups", y = "Average", fill = "Groups", caption = "Data from EVS 2017 Wave.") + 
+        scale_y_continuous(limits = c(0, 4)) +
+        theme_minimal()
+      
+        ggsave(filename = exp_plot_path, plot = exp_plot, device = "png", width = 5, height = 5)
+      
       
       reg_table <- broom::tidy(Mod)
       write.csv(reg_table, reg_table_path, row.names = FALSE)
@@ -306,7 +304,6 @@ shinyServer(function(input, output, session){
       )
     }
   )
-  
   
   
 #######################################################################
