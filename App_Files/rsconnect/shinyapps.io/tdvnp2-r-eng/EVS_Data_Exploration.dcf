@@ -1,12 +1,12 @@
 name: EVS_Data_Exploration
 title: EVS_Data_Exploration
-username: tdvnp2-rachel-engling
-account: tdvnp2-rachel-engling
+username: tdvnp2-r-eng
+account: tdvnp2-r-eng
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14748994
-bundleId: 10290987
-url: https://tdvnp2-rachel-engling.shinyapps.io/EVS_Data_Exploration/
+bundleId: 10291147
+url: https://tdvnp2-r-eng.shinyapps.io/EVS_Data_Exploration/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
