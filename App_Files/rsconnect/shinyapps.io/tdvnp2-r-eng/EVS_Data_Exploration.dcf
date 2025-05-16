@@ -5,8 +5,15 @@ account: tdvnp2-r-eng
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14748994
+<<<<<<< HEAD:App_Files/rsconnect/shinyapps.io/tdvnp2-r-eng/EVS_Data_Exploration.dcf
 bundleId: 10291147
 url: https://tdvnp2-r-eng.shinyapps.io/EVS_Data_Exploration/
+=======
+
+bundleId: 10290987
+
+url: https://tdvnp2-rachel-engling.shinyapps.io/EVS_Data_Exploration/
+>>>>>>> da9378934324134e864301b670cd285578ca6744:App_Files/rsconnect/shinyapps.io/tdvnp2-rachel-engling/EVS_Data_Exploration.dcf
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
