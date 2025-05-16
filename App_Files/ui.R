@@ -45,15 +45,31 @@ shinyUI(
                     
                     #About        
                     tabItem(tabName = "about", 
-                            h2("Welcome!"), 
-                            h4("This app is designed to let you explore data from the World Value Study's 2006 Wave."), 
-                            p("Please use the sidebar menu to navigate through the different pages. Within the 'Graphs & Tables' page, you will find Graphs, Tables, and All Countries. The Graphs and the Tables sections will show you three different options: the average attitudes towards democracy, average news consumption, and the average attitudes towards science for the country you select. The All Countries section will show you the same information but for all countries in the dataset. Please note that some countries may not produce graphs and tables for all three options due to one or more question not being asked in that county's survey."), 
-                            p("The 'Data' page will display the full dataset used for this app. To differentiate between the different sections, variables starting with 'D' are the democracy questions, 'N' are news consumption, and 'S' are science."), 
-                            p("'Click for Github Repository' will immediately open and navigate to the Github repository for this project where more information on the creation of this app can be located."), 
-                            h4("Citation for data used:"),
-                            p("Inglehart, R., C. Haerpfer, A. Moreno, C. Welzel, K. Kizilova, J. Diez-Medrano, M. Lagos, P. Norris, E. Ponarin & B. Puranen et al. (eds.). 2018. World Values Survey: Round Six - Country-Pooled Datafile. Madrid, Spain & Vienna, Austria: JD Systems Institute & WVSA Secretariat. doi.org/10.14281/18241.8")),
-                    
-                    
+                            h1("Welcome!"), 
+                            h4("This app is designed to let you explore data from the European Value Study's 2017 Wave."),
+                            h5("Please use the sidebar menu to navigate through the different pages. Continue reading for more information about the pages."), 
+                            
+                            h2("Exploration & Regression"), 
+                            h4("Here you will find four boxes where you can select different variables and manipulate the graphs, tables, and regression formula."), 
+                            
+                            h3("Selection Boxes"), 
+                            h5("The 'Country' box contains a dropdown where you can select a specific country you are interested in. The default is to show you all countries contain within the dataset. The 'Outcome Variable' box lets you select which of the outcome variables you are interested in investigating. The options are 'GenRol' which represents the attitudes towards traditional gender roles where a higher values reported indicates more positive views on traditional roles, such as believing children suffer if the mother works. The second option, 'Immig, is representative of attitudes towards immigration where higher values reported indicate more positive views towards immigration, such as believing people of the nation should not be given priority over immigrants if jobs are scarce. The 'Control Variable(s)' box lets you select how many control variables you would like considered in the regression calculation. You can select 'Sex' and/or 'Edu', for level of education, or leave the box empty. 'Age' is automatically a part of the regression formula. 'Polynomial Value' also influences the regression formula by changing the number of polynomials of age in the regression, with the options of 1, 2, 3, 4, and 5."), 
+                            
+                            h3("Graphs"), 
+                            h5("The 'Exploration' tab depicts the average value reported of the outcome variable of your choosing, based on respondents' age group, sex, and education level. The 'Regression' tab depicts a scatter plot of the the predicted versus the residuals from the regression."), 
+                            
+                            h3("Regression Results"), 
+                            h5("This section depicts the results from the linear regression, influenced by which control and outcome variables you choose. By default, the regression formula predicts attitudes towards traditional gender roles on age."), 
+                            
+                            h3("Download Report"), 
+                            h5("If you would like to download a copy of the results based on your selected inputs, click to download an HTML file of the graphs and regression table."),
+                            
+                            h2("Data"), 
+                            h4("You will see the display of the full dataset used for this app."), 
+                            
+                            h2("Click for Github Repository"), 
+                            h4("Click this tab will immediately open and navigate to the Github repository for this project where more information on the creation of this app can be located.")
+                    ),
                     
                     
                     #Charts(Graphs)         
@@ -70,20 +86,17 @@ shinyUI(
                           
                           #Exploration
                             fluidRow(
+                              
                               tabBox(id = "tabchart1", title = "Graphs",
-                                     tabPanel("Gender Role Exploration", plotlyOutput("GenExp")), 
-                                     tabPanel("Immigration Exploration", plotlyOutput("ImmigExp")), 
-                                     tabPanel("Gender Role Regression", plotlyOutput("GenReg")), 
-                                     tabPanel("Immigration Regression", plotlyOutput("ImmigReg"))
-                              ), 
+                                     tabPanel(title = "Exploration", plotlyOutput("exp")), 
+                                     tabPanel(title = "Regresssion", plotlyOutput("regplot"))
+                                     ),
 
-                          #Regression   
-                            fluidRow(
-                              tabBox(id = "tabchart1", title = "Regression Results",
-                                     tabPanel("Gender Roles", DT::dataTableOutput("GenModel")), 
-                                     tabPanel("Immigration", DT::dataTableOutput("ImmigModel"))
-                              )
-                            ), 
+                              
+                              box(title = "Regresssion Results", status = "primary", solidHeader = F, DT::dataTableOutput("reg")
+                                  )
+
+                              ), 
                             
 
                           
@@ -98,7 +111,7 @@ shinyUI(
                             
                             
                             
-                    )),
+                    ),
                     
                     
                     #Data

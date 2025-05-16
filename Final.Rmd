@@ -3,6 +3,35 @@ title: "Final"
 output: html_document
 ---
 
+
+#About Section Write up
+
+  h1("Welcome!"), 
+   h4("This app is designed to let you explore data from the European Value Study's 2017 Wave."),
+    p("Please use the sidebar menu to navigate through the different pages. Continue reading for more information about the pages."), 
+
+  h2("Exploration & Regression"), 
+    h4("Here you will find four boxes where you can select different variables and manipulate the graphs, tables, and regression formula."), 
+    
+  h3("Selection Boxes"), 
+    p("The 'Country' box contains a dropdown where you can select a specific country you are interested in. The default is to show you all countries contain within the dataset. The 'Outcome Variable' box lets you select which of the outcome variables you are interested in investigating. The options are 'GenRol' which represents the attitudes towards traditional gender roles where a higher values reported indicates more positive views on traditional roles, such as believing children suffer if the mother works. The second option, 'Immig, is representative of attitudes towards immigration where higher values reported indicate more positive views towards immigration, such as believing people of the nation should not be given priority over immigrants if jobs are scarce. The 'Control Variable(s)' box lets you select how many control variables you would like considered in the regression calculation. You can select 'Sex' and/or 'Edu', for level of education, or leave the box empty. 'Age' is automatically a part of the regression formula. 'Polynomial Value' also influences the regression formula by changing the number of polynomials of age in the regression, with the options of 1, 2, 3, 4, and 5."), 
+
+  h3("Graphs"), 
+    p("The 'Exploration' tab depicts the average value reported of the outcome variable of your choosing, based on respondents' age group, sex, and education level. The 'Regression' tab depicts a scatter plot of the the predicted versus the residuals from the regression."), 
+
+  h3("Regression Results"), 
+    p("This section depicts the results from the linear regression, influenced by which control and outcome variables you choose. By default, the regression formula predicts attitudes towards traditional gender roles on age."), 
+
+  h3("Download Report"), 
+    h5("If you would like to download a copy of the results based on your selected inputs, click to download an HTML file of the graphs and regression table."),
+
+  h2("Data"), 
+    h4("You will see the display of the full dataset used for this app."), 
+
+  h2("Click for Github Repository"), 
+    h4("Click this tab will immediately open and navigate to the Github repository for this project where more information on the creation of this app can be located.")
+
+
 Now you will have to develop a Shiny app that explores that data and that creates dynamic
 reports. The submission will once again be a GitHub repo.
 
@@ -58,26 +87,26 @@ can be tricky to set-up on the server).
 
 
 
-
+#Library & Loading Data
 ```{r}
 library(tidyverse)
-```
 
-```{r}
 Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
 ```
 
-
-# create graph for overall relationship, need "select all" option for country
-
+#General Data Cleaning & Manipulation
 ```{r}
 Dat <- Dat %>%
-  mutate(across(c(Sex, Edu, Country), as.factor))
+  mutate(across(c(Sex, Edu, Country), ~ fct_explicit_na(as.factor(.), na_level = "Missing")))
+
 
 Dat$Age_Group <- cut(Dat$Age, 
                      breaks = c(17, 34, 49, 64, 82), 
                      labels = c("Young Adult", "Middle Adult", "Elder Adult", "Senior Adult"), 
                      right = TRUE)
+
+Dat$Age_Group <- fct_explicit_na(Dat$Age_Group, na_level = "Missing")
+
 table(Dat$Age_Group)
 
 Dat <- Dat %>% 
@@ -107,83 +136,125 @@ Dat <- Dat %>%
   ungroup() 
 ```
 
+
+#Exploratory Data for Gender Roles
 ```{r}
 Dat1 <- Dat
 
-AllGen_long <- Dat1 %>%
-  select(Age_Group, Sex, Edu, 
+AllGen_long <- Dat1 %>% 
+
+  
+  mutate(
+    Age_Group = factor(Age_Group, levels = c("Young Adult", "Middle Adult", "Senior Adult", "Elder Adult", "Missing")),
+    Sex = factor(Sex, levels = c("Male", "Female", "Missing")),
+    Edu = factor(Edu, levels = c("Incomplete Elementary", "Completed Elementary", 
+                                 "Incomplete Secondary", "Completed Secondary", 
+                                 "Incomplete Technical", "Completed Technical",
+                                 "Incomplete University", "Completed University", "Missing")),
+    Country = factor(Country, levels = unique(Country))  
+  ) %>%
+  select(Age_Group, Sex, Edu, Country,
          Ave_GenRol_Age, Ave_GenRol_Sex, 
-         Ave_GenRol_Edu) %>%
+         Ave_GenRol_Edu, Ave_GenRol_Country) %>%
+
   distinct() %>%
   pivot_longer(cols = starts_with("Ave_GenRol"), 
                names_to = "Variable", 
                values_to = "Average") %>%
   mutate(
     Group = case_when(
-      Variable == "Ave_GenRol_Age" ~ as.character(Age_Group),
-      Variable == "Ave_GenRol_Sex" ~ as.character(Sex),
-      Variable == "Ave_GenRol_Edu" ~ as.character(Edu)
+<
+      Variable == "Ave_GenRol_Age" ~ Age_Group,
+      Variable == "Ave_GenRol_Sex" ~ Sex,
+      Variable == "Ave_GenRol_Edu" ~ Edu, 
+      Variable == "Ave_GenRol_Country" ~ Country
+
     ),
     Variable = recode(Variable,
                       "Ave_GenRol_Age" = "Age_Group",
                       "Ave_GenRol_Sex" = "Sex",
-                      "Ave_GenRol_Edu" = "Edu")
+
+                      "Ave_GenRol_Edu" = "Edu", 
+                      "Ave_GenRol_Country" = "Country")
   ) 
 AllExpGenDat <- AllGen_long %>% 
-  select(Variable, Average, Group) %>% unique()
+  filter(Variable != "Country") %>%
+  select(Variable, Average, Group) %>% unique() 
+
+SelectedExpGenDat <- AllGen_long %>% 
+  select(Country, Variable, Average, Group) %>% unique()
 ```
 
+#Exploratory Immigration Data
 ```{r}
-AllImmig_long <- Dat1 %>%
+AllImmig_long <- Dat1 %>% 
+  mutate(
+    Age_Group = factor(Age_Group, levels = c("Young Adult", "Middle Adult", "Senior Adult", "Elder Adult", "Missing")),
+    Sex = factor(Sex, levels = c("Male", "Female", "Missing")),
+    Edu = factor(Edu, levels = c("Incomplete Elementary", "Completed Elementary", 
+                                 "Incomplete Secondary", "Completed Secondary", 
+                                 "Incomplete Technical", "Completed Technical",
+                                 "Incomplete University", "Completed University", "Missing")),
+    Country = factor(Country, levels = unique(Country))  
+  ) %>%
   select(Age_Group, Sex, Edu, 
          Ave_Immig_Age, Ave_Immig_Sex, 
-         Ave_Immig_Edu) %>%
+         Ave_Immig_Edu, Country, Ave_Immig_Country) %>%
+
   distinct() %>%
   pivot_longer(cols = starts_with("Ave_Immig"), 
                names_to = "Variable", 
                values_to = "Average") %>%
   mutate(
     Group = case_when(
-      Variable == "Ave_Immig_Age" ~ as.character(Age_Group),
-      Variable == "Ave_Immig_Sex" ~ as.character(Sex),
-      Variable == "Ave_Immig_Edu" ~ as.character(Edu)
+
+      Variable == "Ave_Immig_Age" ~ Age_Group,
+      Variable == "Ave_Immig_Sex" ~ Sex,
+      Variable == "Ave_Immig_Edu" ~ Edu,
+      Variable == "Ave_Immig_Country" ~ Country
+
     ),
     Variable = recode(Variable,
                       "Ave_Immig_Age" = "Age_Group",
                       "Ave_Immig_Sex" = "Sex",
-                      "Ave_Immig_Edu" = "Edu")
+
+                      "Ave_Immig_Edu" = "Edu", 
+                      "Ave_Immig_Country" = "Country")
   ) 
+
 AllExpImmigDat <- AllImmig_long %>% 
+  filter(Variable != "Country") %>%
   select(Variable, Average, Group) %>% unique()
+
+SelectedExpImmigDat <- AllImmig_long %>% 
+  select(Country, Variable, Average, Group) %>% unique()
 ```
 
-
-
-
+#Making static graph for report
 ```{r}
+library(RColorBrewer)
+exp_data <- SelectedExpGenDat %>% 
+  dplyr::filter(Country == "Germany")  
 
+num_groups <- length(unique(exp_data$Group))
+
+palette1 <- brewer.pal(12, "Set3") 
+palette2 <- brewer.pal(8, "Set2")      
+
+if (num_groups <= length(palette1)) {
+  colors_to_use <- palette1[1:num_groups]
+} else {
+  colors_to_use <- c(palette1, palette2)[1:num_groups]
+}
+
+        ggplot(exp_data, aes(x = Variable, y = Average, fill = Group)) +
+          geom_bar(stat = "identity", position = "dodge") + 
+          scale_fill_manual(values = colors_to_use) +
+          labs(title = "Average Attitude by Group", x = "Variable Groups", y = "Average", fill = "Groups", caption = "Data from EVS 2017 Wave.") + 
+
+          scale_y_continuous(limits = c(0, 4)) +
+          theme_minimal()
+        
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

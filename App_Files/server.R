@@ -5,13 +5,17 @@ library(vroom)
 library(plotly)
 library(DT)
 library(here) 
+library(pander) 
+library(RColorBrewer)
 
 shinyServer(function(input, output, session){
   
-#########################################################
   
   
-  #Datatable
+  
+  
+  
+### Datatable
   output$mydatatable <- DT::renderDT({
     Dat %>%
       DT::datatable(options = list(scrollX = T))
@@ -20,16 +24,29 @@ shinyServer(function(input, output, session){
   
   
   
+  
+  
+### Input Widgets 
   #Country widget 
+  All <- unique(Dat$Country)
+  
   output$inputwidget <- renderUI({
-    selectInput("selected", "Select a Country:", choices = unique(Dat$Country), selected = unique(Dat$Country)[1])
+    selectInput("selected", "Select a Country:", 
+                choices = c("All", as.character(All)), 
+                selected = "All")
   })
+  
+  observeEvent(input$selected, {
+    selected_countries <- if (input$selected == "All") All else input$selected
+  })
+  
   #Outcome widget 
   output$outcomewidget <- renderUI({
     selectInput("chosen", "Select an Outcome Variable:", 
                 choices = c("GenRol", "Immig"), 
                 selected = "GenRol")
   })
+  
   #Controls widget 
   output$controlswidget <- renderUI({
     selectInput("controler", 
@@ -38,142 +55,266 @@ shinyServer(function(input, output, session){
                 selected = NULL,  
                 multiple = TRUE)
   })
+  
   #Poly widget 
   output$polywidget <- renderUI({
-    numericInput("num_input", "Enter a Numeric Value (1-5):", value = NULL, min = 1, max = 5)
+    numericInput("num_input", "Enter a Numeric Value (1-5):", value = 1, min = 1, max = 5)
   })
   
   
-####Explore Graphs 
-  output$GenExp <- renderPlotly({
-    plot_ly(AllExpGenDat, 
+  
+  
+  
+  
+### Explore Graphs 
+  output$exp <- renderPlotly({
+    if (input$chosen == "GenRol") {
+      Filt <- if (input$selected == "All") {
+        AllExpGenDat
+      } else {
+        SelectedExpGenDat %>% dplyr::filter(Country == input$selected)
+      }
+      plot_title <- "Average Attitude Towards Gender Roles by Group"
+      y_title <- "Average Attitude Towards Gender Roles"
+    } else if (input$chosen == "Immig") {
+      Filt <- if (input$selected == "All") {
+        AllExpImmigDat
+      } else {
+        SelectedExpImmigDat %>% dplyr::filter(Country == input$selected)
+      }
+      plot_title <- "Average Attitude Towards Immigration by Group"
+      y_title <- "Average Attitude Towards Immigration"
+    }
+    
+    plot_ly(Filt,
             x = ~Variable, 
             y = ~Average, 
             color = ~Group, 
             type = 'bar', 
             text = ~paste("Group:", Group, "<br>Average:", Average),
             hoverinfo = 'text') %>%
-      layout(title = "Average Attitude Towards Gender Roles by Group",
-             xaxis = list(title = "Variable Groups"),
-             yaxis = list(title = "Average Attitude Towards Gender Roles", range = c(1, 4)),
-             barmode = 'group')
+      layout(
+        title = plot_title,
+        xaxis = list(title = "Variable Groups"),
+        yaxis = list(title = y_title, range = c(1, 4)),
+        barmode = 'group'
+      )
   })
-  
-  
-  output$ImmigExp <- renderPlotly({
-    plot_ly(AllExpImmigDat, 
-            x = ~Variable, 
-            y = ~Average, 
-            color = ~Group, 
-            type = 'bar', 
-            text = ~paste("Group:", Group, "<br>Average:", Average),
-            hoverinfo = 'text') %>%
-      layout(title = "Average Attitude Towards Immigration by Group",
-             xaxis = list(title = "Variable Groups"),
-             yaxis = list(title = "Average Attitude Towards Immigration", range = c(1, 4)),
-             barmode = 'group')
-  })
+ 
   
   
   
   
   
-####Regression Graphs
-  output$GenReg <- renderPlotly({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
-    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
-    model_df <- broom::tidy(GenMod) 
+### Regression Graphs
+  output$regplot <- renderPlotly({
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    } 
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    outcome_var <- input$chosen
+    selected_vars <- input$controler 
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
+    }
+    
+    if (length(selected_vars) > 0) {
+      formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
+    } else {
+      formula <- paste(outcome_var, "~", age_term)
+    }
+    
+    Mod <- lm(as.formula(formula), data = Filt)
+  
+    model_df <- broom::augment(Mod) %>%
+      dplyr::select(.fitted, .resid)
     
     plotly::plot_ly(
       data = model_df,
-      x = ~term,
-      y = ~estimate,
+      x = ~.fitted,
+      y = ~.resid,
       type = 'scatter',
-      mode = 'markers+errorbars',
-      error_y = list(
-        type = 'data',
-        array = ~std.error,
-        visible = TRUE
-      )
-    ) %>%
+      mode = 'markers'
+      ) %>%
       plotly::layout(
-        title = "Scatter Plot of Model Coefficients",
-        xaxis = list(title = "Term"),
-        yaxis = list(title = "Estimate")
+        title = "Predicted Values vs Residuals",
+        xaxis = list(title = "Predicted Values"),
+        yaxis = list(title = "Residuals")
       )
   })
   
-  output$ImmigReg <- renderPlotly({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
-    ImmigMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
-    model_df <- broom::tidy(ImmigMod) 
-    
-    plotly::plot_ly(
-      data = model_df,
-      x = ~term,
-      y = ~estimate,
-      type = 'scatter',
-      mode = 'markers+errorbars',
-      error_y = list(
-        type = 'data',
-        array = ~std.error,
-        visible = TRUE
-      )
-    ) %>%
-      plotly::layout(
-        title = "Scatter Plot of Model Coefficients",
-        xaxis = list(title = "Term"),
-        yaxis = list(title = "Estimate")
-      )
-  })
   
-
+ 
   
-
     
     
 ### Regression Table
-  output$GenModel <-DT::renderDT({
-    Filt <- Dat %>%
-      dplyr::filter(Country == input$selected)
-    GenMod <- lm(GenRol ~ Age + Edu + Sex, data = Filt)  
-    broom::tidy(GenMod) %>%
+  output$reg <-DT::renderDT({
+    Filt <- if (input$selected == "All") {
+      Dat
+    } else {
+      Dat %>% dplyr::filter(Country == input$selected)
+    } 
+    
+    Filt <- Filt %>% dplyr::filter(!is.na(Age))
+    
+    outcome_var <- input$chosen
+    selected_vars <- input$controler 
+    poly_degree <- input$num_input
+    
+    age_term <- if (poly_degree == 1) {
+      "Age"
+    } else {
+      paste0("poly(Age, ", poly_degree, ")")
+    }
+    
+    if (length(selected_vars) > 0) {
+      formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
+    } else {
+      formula <- paste(outcome_var, "~", age_term)
+    }
+    
+    Mod <- lm(as.formula(formula), data = Filt)
+    
+    broom::tidy(Mod) %>%
       dplyr::mutate(across(
         where(is.numeric), 
         ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
       )) %>%
-      DT::datatable(options = list(scrollX = TRUE))
-  })
-  
-  output$ImmigModel <-DT::renderDT({ 
-    Filt <- Dat %>%
-    dplyr::filter(Country == input$selected) 
-    ImmMod <- lm(Immig ~ Age + Edu + Sex, data = Filt)  
-    broom::tidy(ImmMod) %>%
-      dplyr::mutate(across(
-        where(is.numeric), 
-        ~ ifelse(round(., 4) == 0, "<0.0001", format(round(., 4), nsmall = 4))
+      dplyr::mutate(term = case_when(
+        grepl("poly\\(Age, [0-9]+\\)1", term) ~ "Age",
+        grepl("poly\\(Age, [0-9]+\\)2", term) ~ "Age\u00B2",
+        grepl("poly\\(Age, [0-9]+\\)3", term) ~ "Age\u00B3", 
+        grepl("poly\\(Age, [0-9]+\\)4", term) ~ "Age\u2074", 
+        grepl("poly\\(Age, [0-9]+\\)5", term) ~ "Age\u2075",
+        TRUE ~ term
       )) %>%
-      DT::datatable(options = list(scrollX = TRUE))
+      dplyr::rename(
+        Term = term,
+        `Reg Coef` = estimate,
+        `SE` = std.error,
+        `t-Statistic` = statistic,
+        `p-Value` = p.value
+      ) %>%
+      DT::datatable(
+        options = list(scrollX = TRUE), 
+        rownames = FALSE, 
+        escape = FALSE
+      )
   })
+
+##############################################################################################################
   
-  
-  
-  
-  #Report widget 
+### Report widget 
   output$download_report <- downloadHandler(
     filename = function() {
-      paste("Report_for_", input$country, ".pdf", sep = "")  
+      paste("Report_for_", input$selected, ".html", sep = "")  
     },
     content = function(file) {
-      report_content <- generate_report(input$country)
+      user_temp <- file.path(tempdir(), "shiny_temp")
+      if (!dir.exists(user_temp)) dir.create(user_temp)
       
-      write(report_content, file)
+      reg_plot_path <- normalizePath(file.path(user_temp, "reg_plot.png"), winslash = "/")
+      exp_plot_path <- normalizePath(file.path(user_temp, "exp_plot.png"), winslash = "/")
+      reg_table_path <- normalizePath(file.path(user_temp, "reg_table.csv"), winslash = "/")
+      
+      
+      #user_temp <- "C:/Users/Owner/SURV675_Final/Reports"
+      
+      #reg_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/reg_plot.png"
+      #exp_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/exp_plot.png"
+      #reg_table_path <- file.path(user_temp, "reg_table.csv")
+      
+      Filt <- if (input$selected == "All") {
+        Dat
+      } else {
+        Dat %>% dplyr::filter(Country == input$selected)
+      }
+      Filt <- Filt %>% dplyr::filter(!is.na(Age))
+      
+      outcome_var <- input$chosen
+      selected_vars <- input$controler
+      poly_degree <- input$num_input
+      age_term <- if (poly_degree == 1) {
+        "Age"
+      } else {
+        paste0("poly(Age, ", poly_degree, ")")
+      }
+      
+      if (length(selected_vars) > 0) {
+        formula <- paste(outcome_var, "~", age_term, "+", paste(selected_vars, collapse = " + "))
+      } else {
+        formula <- paste(outcome_var, " ~ ", age_term)
+      }
+      
+      Mod <- lm(as.formula(formula), data = Filt)
+      
+      reg_plot <- ggplot(broom::augment(Mod), aes(x = .fitted, y = .resid)) +
+        geom_point() +
+        labs(title = "Predicted Values vs Residuals", x = "Predicted Values", y = "Residuals") +
+        theme_minimal()
+      
+      ggsave(filename = reg_plot_path, plot = reg_plot, device = "png", width = 5, height = 5)
+      
+      exp_data <- if (input$selected == "All") {
+        AllExpGenDat 
+      } else {
+        SelectedExpGenDat %>% dplyr::filter(Country == input$selected) 
+      }
+      num_groups <- length(unique(exp_data$Group))
+      
+      palette1 <- brewer.pal(12, "Set3") 
+      palette2 <- brewer.pal(8, "Set2")      
+      
+      if (num_groups <= length(palette1)) {
+        colors_to_use <- palette1[1:num_groups]
+      } else {
+        colors_to_use <- c(palette1, palette2)[1:num_groups]
+      }
+      
+      exp_plot <- ggplot(exp_data, aes(x = Variable, y = Average, fill = Group)) +
+        geom_bar(stat = "identity", position = "dodge") + 
+        scale_fill_manual(values = colors_to_use) +
+        labs(title = "Average Attitude by Group", x = "Variable Groups", y = "Average", fill = "Groups", caption = "Data from EVS 2017 Wave.") + 
+        scale_y_continuous(limits = c(0, 4)) +
+        theme_minimal()
+      
+        ggsave(filename = exp_plot_path, plot = exp_plot, device = "png", width = 5, height = 5)
+      
+      
+      reg_table <- broom::tidy(Mod)
+      write.csv(reg_table, reg_table_path, row.names = FALSE)
+      
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("report.Rmd", tempReport, overwrite = TRUE)
+      
+      rmarkdown::render(
+        tempReport,
+        output_file = file,
+        params = list(
+          country = input$selected,
+          outcome = input$chosen,
+          controls = input$controler,
+          poly_degree = input$num_input,
+          reg_plot_path = reg_plot_path,
+          exp_plot_path = exp_plot_path,
+          reg_table_path = reg_table_path
+        ),
+        envir = new.env(parent = globalenv())
+      )
     }
   )
   
+  
+#######################################################################
   
 }
 )
