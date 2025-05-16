@@ -3,9 +3,9 @@ library(shiny)
 library(here)
 
 #setwd("/srv/connect/apps/EVS_Data_Exploration")
-#Dat <- read_csv("www/CleanData.csv")
+Dat <- read_csv("www/CleanData.csv")
  
-Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
+#Dat <- read_csv("C:\\Users\\Owner\\SURV675_Final\\App_Files\\www\\CleanData.csv")
 
 Dat <- Dat %>%
   mutate(across(c(Sex, Edu, Country), ~ fct_explicit_na(as.factor(.), na_level = "Missing")))

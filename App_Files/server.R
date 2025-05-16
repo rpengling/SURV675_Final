@@ -219,11 +219,19 @@ shinyServer(function(input, output, session){
       paste("Report_for_", input$selected, ".html", sep = "")  
     },
     content = function(file) {
-      user_temp <- "C:/Users/Owner/SURV675_Final/Reports"
+      user_temp <- file.path(tempdir(), "shiny_temp")
+      if (!dir.exists(user_temp)) dir.create(user_temp)
       
-      reg_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/reg_plot.png"
-      exp_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/exp_plot.png"
-      reg_table_path <- file.path(user_temp, "reg_table.csv")
+      reg_plot_path <- normalizePath(file.path(user_temp, "reg_plot.png"), winslash = "/")
+      exp_plot_path <- normalizePath(file.path(user_temp, "exp_plot.png"), winslash = "/")
+      reg_table_path <- normalizePath(file.path(user_temp, "reg_table.csv"), winslash = "/")
+      
+      
+      #user_temp <- "C:/Users/Owner/SURV675_Final/Reports"
+      
+      #reg_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/reg_plot.png"
+      #exp_plot_path <- "C:/Users/Owner/SURV675_Final/Reports/exp_plot.png"
+      #reg_table_path <- file.path(user_temp, "reg_table.csv")
       
       Filt <- if (input$selected == "All") {
         Dat
