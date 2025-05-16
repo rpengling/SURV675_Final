@@ -1,0 +1,12 @@
+name: EVS_Data_Exploration
+title:
+username: tdvnp2-r-eng
+account: tdvnp2-r-eng
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14748994
+bundleId: 10291175
+url: https://tdvnp2-r-eng.shinyapps.io/EVS_Data_Exploration/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
